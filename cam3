@@ -16,7 +16,6 @@ C=0
 e=False
 e1=False
 print "ancho",X, " alto",Y
-111253968
 kernel = np.ones((5,5),np.uint8)
 
 def nothing(x):
