@@ -10,12 +10,12 @@ cap = cv2.VideoCapture(0)       # captura video en "cap"
 print "espere..."
 time.sleep(2)                   # espera 2 segundos (espera a que la camara obtenga los primeros fotogramas)
 print "Ejecutando \nPrecione 'esc' para salir."
-X = cap.get(3)                  # captura ancho y largo de la imagen (resolución)
+X = cap.get(3)                  # captura ancho y largo de la imagen (resolucion)
 Y = cap.get(4)
 C=0                             #Declaracion de variables
 e=False
 e1=False
-print "ancho",X, " alto",y      # Imprime la resolucion obtenida por la camara
+print "ancho",X, " alto",Y      # Imprime la resolucion obtenida por la camara
 
 kernel = np.ones((5,5),np.uint8)
 
@@ -49,7 +49,7 @@ while(True):
     mincolor=np.array([h,s,v])                   # Rango maximo y minimo para buscar color, se almacenan en arrays
     maxcolor=np.array([H,S,V])
                                             
-    mask = cv2.inRange(hsv, mincolor, maxcolor)  # Se buscan los pixeles que estén dentro del rango dictado por mincolor y maxcolor y crea una mascara.
+    mask = cv2.inRange(hsv, mincolor, maxcolor)  # Se buscan los pixeles que esten dentro del rango dictado por mincolor y maxcolor y crea una mascara.
     
     opening = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel) # Se filtra la mascara obtenida.
     filt = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
