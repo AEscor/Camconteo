@@ -6,29 +6,30 @@ import time
 
 os.system ("cls")
 
-cap = cv2.VideoCapture(0) #captura video en "cap"
+cap = cv2.VideoCapture(0)       # captura video en "cap"
 print "espere..."
-time.sleep(2)#espera 2 segundos
+time.sleep(2)                   # espera 2 segundos (espera a que la camara obtenga los primeros fotogramas)
 print "Ejecutando \nPrecione 'esc' para salir."
-X = cap.get(3)#captura ancho y largo de la imagen (resolucion)
+X = cap.get(3)                  # captura ancho y largo de la imagen (resolución)
 Y = cap.get(4)
-C=0
+C=0                             #Declaracion de variables
 e=False
 e1=False
-print "ancho",X, " alto",Y
+print "ancho",X, " alto",y      # Imprime la resolucion obtenida por la camara
+
 kernel = np.ones((5,5),np.uint8)
 
 def nothing(x):
     pass
-cv2.namedWindow("ventana1")
+cv2.namedWindow("ventana1")     # Crea ventanas para futura referencia
 cv2.namedWindow("mask")
-cv2.createTrackbar('H','mask',0,179,nothing)
-cv2.createTrackbar('h','mask',0,179,nothing)
+cv2.createTrackbar('H','mask',0,179,nothing) # Trackbar, ajuste de valores HSV (Hue, Saturation, Value)
+cv2.createTrackbar('h','mask',0,179,nothing) # H,D,V para valores maximos, h,s,v para valores minimos
 cv2.createTrackbar('S','mask',0,255,nothing)
 cv2.createTrackbar('s','mask',0,255,nothing)
 cv2.createTrackbar('V','mask',0,255,nothing)
 cv2.createTrackbar('v','mask',0,255,nothing)
-cv2.setTrackbarPos('H','mask', 179)
+cv2.setTrackbarPos('H','mask', 179)          # valores por "default" para color rojo
 cv2.setTrackbarPos('h','mask', 168)
 cv2.setTrackbarPos('S','mask', 255)
 cv2.setTrackbarPos('s','mask', 120)
@@ -36,65 +37,60 @@ cv2.setTrackbarPos('V','mask', 255)
 cv2.setTrackbarPos('v','mask', 0)
 
 while(True):
-  #recojemos fotograma a fotograma lo que hay en "cap"
-    ret, frame = cap.read()
-  #convercion de color bgr->ctv, cv2.COLOR_BGR2GRAY para bgr->gris
-    hsv=cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-    H = cv2.getTrackbarPos('H','mask')
+    ret, frame = cap.read()                      # Recojemos fotograma a fotograma lo que hay en "cap"
+    hsv=cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)    # Convercion de color bgr->ctv para mejor reconocimiento de color
+    H = cv2.getTrackbarPos('H','mask')           # Muestra las trackbar en la ventana "mask"
     h = cv2.getTrackbarPos('h','mask')
     S = cv2.getTrackbarPos('S','mask')
     s = cv2.getTrackbarPos('s','mask')
     V = cv2.getTrackbarPos('V','mask')
     v = cv2.getTrackbarPos('v','mask')
 
-    mincolor=np.array([h,s,v])#Rango color
+    mincolor=np.array([h,s,v])                   # Rango maximo y minimo para buscar color, se almacenan en arrays
     maxcolor=np.array([H,S,V])
-
-     # Rango de valores para color hsv, mascara
-    mask = cv2.inRange(hsv, mincolor, maxcolor)
-    #filtros
-    opening = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+                                            
+    mask = cv2.inRange(hsv, mincolor, maxcolor)  # Se buscan los pixeles que estén dentro del rango dictado por mincolor y maxcolor y crea una mascara.
+    
+    opening = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel) # Se filtra la mascara obtenida.
     filt = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
     # Bitwise-AND mask and original image
-    res = cv2.bitwise_and(frame,frame, mask= filt)
+    res = cv2.bitwise_and(frame,frame, mask= filt)           #Toma del frame los pixeles encontrados por la mascara.
 
-    cv2.line(frame,(550,0),(550,480),(255,0,0),2)
-    contours, hierarchy = cv2.findContours(filt.copy(), 1, 2)
+    cv2.line(frame,(550,0),(550,480),(255,0,0),2)            #Linea imaginaria para contar, color azul
+    contours, hierarchy = cv2.findContours(filt.copy(), 1, 2)#Busca en una copia de la mascara los bordes, crea matrices.
     co=0
-    for cnt in contours:
-           if np.size(cnt) > 80:
-               x,y,w,h=cv2.boundingRect(cnt)
-               cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
-               cx=x+w/2
+    for cnt in contours:                                     #por cada contorno encontrado, ejecuta el ciclo
+           if np.size(cnt) > 80:                             #si el borde es mayor a 80 ejecuta el siguiente bloque
+               x,y,w,h=cv2.boundingRect(cnt)                 #Busca los valores maximos de la altura y anchura (w,h)del borde encontrado, asi como su posicion en el frame (x,y)
+               cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2) #Dibuja un rectangulo con (x,y) como punto inicial, y (x+w,y+h) como final
+               cx=x+w/2                                      # Calcula el centro del rectantulo dibujado
                cy=y+h/2
-               cv2.circle(frame,(cx,cy),5,(0,0,255),-1)
-               cv2.putText(frame,str(cx)+"X ,"+str(cy)+"Y",(x,y-3), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1)
-               co=co+1
+               cv2.circle(frame,(cx,cy),5,(0,0,255),-1)      #Dibuja un circulo en el centro del rectangulo
+               cv2.putText(frame,str(cx)+"X ,"+str(cy)+"Y",(x,y-3), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1) #Imprime en el extremo superior del rectangulo
+               co=co+1                                       #Cuenta objeto en pantalla y almacena en "co"          #las cordenadas del centro.
 
-               if cv2.waitKey(1)&0xFF==ord("q"):
-                    C=0
-               if 555>cx>545:
-                    cv2.line(frame,(550,0),(550,480),(255,255,0),3)
-                    e=True
-                    if e==True and e1==False:
-                        C=C+1
-               else:
-                    e=False         
+               if cv2.waitKey(1)&0xFF==ord("q"):                    #si se preciona "q", reinicia el conteo de objetos
+                    C=0                                             
+               if 555>cx>545:                                       #Si el centro del objeto encontrado se encuentra en las coorenadas x de la linea azul
+                    cv2.line(frame,(550,0),(550,480),(255,255,0),3) #Cambia el color de la linea a azul celeste
+                    e=True                                          
+                    if e==True and e1==False:                       #Si e el verdadero y e1 falso
+                        C=C+1                                       #Cuenta el objeto
+               else:                                                #Las variables booleanas e y e1 se utilizan para evitar el conteo ciclado del objeto
+                    e=False                                         
                e1=e
                #print e   
-    cv2.putText(frame,"Num. Objetos:["+ str(co)+"]",(0,40), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1)                         
-    cv2.putText(frame,"Contador:["+ str(C)+"]",(0,20), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1)    
+    cv2.putText(frame,"Num. Objetos:["+ str(co)+"]",(0,40), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1)#Imprime el numero de objetos en pantalla                      
+    cv2.putText(frame,"Contador:["+ str(C)+"]",(0,20), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1)     #Imprime el numero de objetos que han cruzado por la linea 
     
     
-    cv2.imshow('mask',filt)
-    cv2.imshow('res',res)
-
-    # Muestra el fotograma resulante
-    cv2.imshow("ventana1", frame)
-    key = cv2.waitKey(1)
+    cv2.imshow('mask',filt)   # Muetra la mascara (despues del filtrado) en la ventana "Mask"
+    cv2.imshow('res',res)     # Muestra los pixeles tomados del fotograma dentro del area de la mascara, y muetralos en la ventana "res"
+    cv2.imshow("ventana1", frame)  # Muestra el fotograma resulante
+    key = cv2.waitKey(1)      #Rompe ciclo con "esc"
     if key == 27:  
       break
 
-cap.release()
-cv2.destroyAllWindows()
-sys.exit()
+cap.release()                 #libera cap (apaga camara)
+cv2.destroyAllWindows()       #cierra todas las ventanas
+sys.exit()                    #salir del programa
