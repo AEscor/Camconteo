@@ -1,0 +1,101 @@
+import cv2
+import numpy as np
+import sys
+import os
+import time
+
+os.system ("cls")
+
+cap = cv2.VideoCapture(0) #captura video en "cap"
+print "espere..."
+time.sleep(2)#espera 2 segundos
+print "Ejecutando \nPrecione 'esc' para salir."
+X = cap.get(3)#captura ancho y largo de la imagen (resolucion)
+Y = cap.get(4)
+C=0
+e=False
+e1=False
+print "ancho",X, " alto",Y
+111253968
+kernel = np.ones((5,5),np.uint8)
+
+def nothing(x):
+    pass
+cv2.namedWindow("ventana1")
+cv2.namedWindow("mask")
+cv2.createTrackbar('H','mask',0,179,nothing)
+cv2.createTrackbar('h','mask',0,179,nothing)
+cv2.createTrackbar('S','mask',0,255,nothing)
+cv2.createTrackbar('s','mask',0,255,nothing)
+cv2.createTrackbar('V','mask',0,255,nothing)
+cv2.createTrackbar('v','mask',0,255,nothing)
+cv2.setTrackbarPos('H','mask', 179)
+cv2.setTrackbarPos('h','mask', 168)
+cv2.setTrackbarPos('S','mask', 255)
+cv2.setTrackbarPos('s','mask', 120)
+cv2.setTrackbarPos('V','mask', 255)
+cv2.setTrackbarPos('v','mask', 0)
+
+while(True):
+  #recojemos fotograma a fotograma lo que hay en "cap"
+    ret, frame = cap.read()
+  #convercion de color bgr->ctv, cv2.COLOR_BGR2GRAY para bgr->gris
+    hsv=cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+    H = cv2.getTrackbarPos('H','mask')
+    h = cv2.getTrackbarPos('h','mask')
+    S = cv2.getTrackbarPos('S','mask')
+    s = cv2.getTrackbarPos('s','mask')
+    V = cv2.getTrackbarPos('V','mask')
+    v = cv2.getTrackbarPos('v','mask')
+
+    mincolor=np.array([h,s,v])#Rango color
+    maxcolor=np.array([H,S,V])
+
+     # Rango de valores para color hsv, mascara
+    mask = cv2.inRange(hsv, mincolor, maxcolor)
+    #filtros
+    opening = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    filt = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
+    # Bitwise-AND mask and original image
+    res = cv2.bitwise_and(frame,frame, mask= filt)
+
+    cv2.line(frame,(550,0),(550,480),(255,0,0),2)
+    contours, hierarchy = cv2.findContours(filt.copy(), 1, 2)
+    co=0
+    for cnt in contours:
+           if np.size(cnt) > 80:
+               x,y,w,h=cv2.boundingRect(cnt)
+               cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
+               cx=x+w/2
+               cy=y+h/2
+               cv2.circle(frame,(cx,cy),5,(0,0,255),-1)
+               cv2.putText(frame,str(cx)+"X ,"+str(cy)+"Y",(x,y-3), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1)
+               co=co+1
+
+               if cv2.waitKey(1)&0xFF==ord("q"):
+                    C=0
+               if 555>cx>545:
+                    cv2.line(frame,(550,0),(550,480),(255,255,0),3)
+                    e=True
+                    if e==True and e1==False:
+                        C=C+1
+               else:
+                    e=False         
+               e1=e
+               #print e   
+    cv2.putText(frame,"Num. Objetos:["+ str(co)+"]",(0,40), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1)                         
+    cv2.putText(frame,"Contador:["+ str(C)+"]",(0,20), cv2.FONT_HERSHEY_SIMPLEX, .5, (255,255,255), 1)    
+    
+    
+    cv2.imshow('mask',filt)
+    cv2.imshow('res',res)
+
+    # Muestra el fotograma resulante
+    cv2.imshow("ventana1", frame)
+    key = cv2.waitKey(1)
+    if key == 27:  
+      break
+
+cap.release()
+cv2.destroyAllWindows()
+sys.exit()
